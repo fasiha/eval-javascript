@@ -24,8 +24,30 @@ module.exports =
         else
           console.log ">", result
 
+    @disposable2 = atom.commands.add 'atom-text-editor', 'eval-javascript:eval-insert-javascript', =>
+      editor = atom.workspace.getActiveTextEditor()
+      if !editor
+        console.warn "No text editor is active."
+        return
+      code = editor.getSelectedText()
+      if code
+        scope = @matchingCursorScopeInEditor(editor)
+      else
+        return console.error "No code selected"
+      @runCodeInScope code, scope, (error, warning, result) ->
+        if error
+          console.error error.toString().replace(/evalmachine.\S*/,'')
+        else if warning
+          console.warn warning
+        else
+          console.log ">", result
+          editor.moveRight()
+          editor.insertNewlineBelow()
+          editor.insertText('/* result: \n' + result + '\n*/')
+
   deactivate: ->
     @disposable?.dispose()
+    @disposable2?.dispose()
 
   runCodeInScope: (code, scope, callback) ->
     switch scope
